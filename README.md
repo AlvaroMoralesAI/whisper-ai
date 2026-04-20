@@ -1,61 +1,28 @@
-# whisper-ai
+# Whisper AI ✨
 
-App de dictado por voz para macOS estilo Whisperflow. Doble-tap en una tecla, habla, suelta, y el texto se pega automáticamente en la app activa.
+Una aplicación nativa de dictado por voz para macOS super premium con formateo automático generativo por Inteligencia Artificial (LLaMA).
 
-## Features
+## Características
+- **Zero lag:** Transcripción sub-segundo con Whisper Large v3 (vía Groq).
+- **Inteligencia Pura:** Pule y formatea tus audios automáticamente con `LLaMA-3.3 70B`. Limpia muletillas, estructura enumeraciones en listas e inserta signos de puntuación perfectos.
+- **Overlay Premium:** Animaciones reales a 60fps renderizadas directo al Metal de Mac usando API CoreGraphics. Píldora de cristal oscuro con brillo neón reactivo a tu voz.
+- **Inyección directa:** Simula teclado nativo. Pega el texto donde sea que esté tu cursor de texto en cualquier aplicación.
+- **Modos de Grabación:** Selecciona interactuar "Manteniendo presionado" (Hold) o modo de toque único "Toggle" para dictar sin manos.
 
-- 🎙 Doble-tap para grabar (Right Alt por defecto)
-- 🧠 4 proveedores: **Groq** (gratis), OpenAI, Deepgram, AssemblyAI
-- 🌍 Idiomas: es / en / fr / de / it / pt / auto
-- 🔊 Feedback sonoro (Tink al empezar, Pop al terminar)
-- 📋 Auto-paste en la app activa
-- 🕐 Historial de las últimas 10 transcripciones
-- 🍎 Icono en menu bar
+## Instalación en 1-Click (Para el equipo)
 
-## Requisitos
-
-- macOS 11+
-- Python 3.11+
-- Permisos de **Accesibilidad** y **Micrófono** para Terminal/iTerm
-
-## Instalación
+1. **Clona o descarga** este repositorio (haz click en *Code > Download ZIP* si no usas git y descomprímelo).
+2. Abre la app `Terminal`, navega a la carpeta descargada (`cd ~/Downloads/whisper-ai-main`) y ejecuta el instalador automatizado:
 
 ```bash
-git clone https://github.com/AlvaroMoralesAI/whisper-ai.git
-cd whisper-ai
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python src/whisper_ai.py
+chmod +x install.sh
+./install.sh
 ```
 
-Verás el icono 🎙 en la barra de menú.
+### Configuración post-instalación:
+1. Abre **whisper-ai** en tu Escritorio (`~/Desktop/whisper-ai.app`).
+2. macOS te pedirá permisos de **Accesibilidad** e **Input Monitoring** (necesarios para que reciba la pulsación de la tecla y emita las letras como teclado virtual). Entra en `System Settings` y otorga los dos permisos a la app.
+3. Toca el logo de la aplicación en la barra superior del menú de tu Mac (arriba a la derecha).
+4. Ve a **"Set API key…"** y pega tu clave personal de la plataforma Groq.
 
-## Configuración
-
-1. Click en el icono → **Set API key…** y pega tu key del provider activo.
-2. Elige provider desde **Change provider** (por defecto Groq).
-3. Elige idioma y hotkey si quieres cambiarlos.
-
-### Dónde obtener API keys
-
-| Provider   | URL                            | Coste              |
-|------------|--------------------------------|--------------------|
-| Groq       | https://console.groq.com       | Gratis (generoso)  |
-| OpenAI     | https://platform.openai.com    | De pago            |
-| Deepgram   | https://console.deepgram.com   | Free tier          |
-| AssemblyAI | https://app.assemblyai.com     | Free tier          |
-
-## Uso
-
-1. Doble-tap **Right Alt** (configurable).
-2. Mantén la tecla pulsada mientras hablas.
-3. Suelta → transcribe → auto-paste en la app activa.
-
-## Config
-
-`~/.whisper_ai.json` (permisos `0o600`). Contiene provider, keys, idioma, hotkey e historial.
-
-## Licencia
-
-MIT © 2026 Álvaro Morales
+¡Listo! Presiona tu tecla de activación (por defecto `Option derecho`) y experimenta.
