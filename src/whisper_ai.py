@@ -319,17 +319,21 @@ class OverlayView:
             NSBorderlessWindowMask, NSFloatingWindowLevel, NSVisualEffectView,
             NSVisualEffectMaterialDark, NSVisualEffectBlendingModeBehindWindow,
             NSView, NSBezierPath, NSTimer, NSRunLoop, NSDefaultRunLoopMode,
-            NSScreen
+            NSScreen, NSImage
         )
         import objc
         self.recorder = recorder
         self.bars = [0.1] * 12
         
+        # Load logo image
+        icon_path = _get_menubar_icon()
+        self.logo_image = NSImage.alloc().initWithContentsOfFile_(icon_path) if icon_path else None
+        
         # NSView class for drawing
         class RecordingVisualizerView(NSView):
             parent = None
             def drawRect_(self, dirtyRect):
-                from AppKit import NSGradient, NSShadow, NSGraphicsContext
+                from AppKit import NSGradient, NSShadow, NSGraphicsContext, NSBezierPath, NSColor
                 if not self.parent: return
                 NSColor.clearColor().set()
                 NSBezierPath.fillRect_(dirtyRect)
@@ -340,42 +344,65 @@ class OverlayView:
                 base_path = NSBezierPath.bezierPathWithRoundedRect_xRadius_yRadius_(
                     bounds, bounds.size.height / 2, bounds.size.height / 2
                 )
-                # Pure black but translucent to let dark glass shine
-                _hex_to_nscolor("000000", 0.6).setFill()
+                _hex_to_nscolor("000000", 0.7).setFill()
                 base_path.fill()
                 
-                # Draw a glassy highlight gradient across the very top 
+                # Glassy highlight
                 glass_gradient = NSGradient.alloc().initWithStartingColor_endingColor_(
-                    _hex_to_nscolor("ffffff", 0.15),
+                    _hex_to_nscolor("ffffff", 0.1),
                     _hex_to_nscolor("ffffff", 0.0)
                 )
                 highlight_rect = NSRect(NSPoint(0, bounds.size.height / 2), NSSize(bounds.size.width, bounds.size.height / 2))
                 glass_gradient.drawInRect_angle_(highlight_rect, -90.0)
 
-                # Outer border stroke (Sharp glass rim)
-                _hex_to_nscolor("ffffff", 0.20).setStroke()
-                base_path.setLineWidth_(1.0)
-                base_path.stroke()
+                # 1. Draw Logo Circle on the left
+                margin = 5
+                circle_size = bounds.size.height - (margin * 2)
+                circle_rect = NSRect(NSPoint(margin, margin), NSSize(circle_size, circle_size))
+                circle_path = NSBezierPath.bezierPathWithOvalInRect_(circle_rect)
                 
-                # Setup glow shadow for the purple bars (Intense Neon effect)
+                # Purple circle background
+                PURPLE_ACCENT = "ac3aff"
+                _hex_to_nscolor(PURPLE_ACCENT, 1.0).setFill()
+                circle_path.fill()
+                
+                # Integrar Logo: Aplicamos clipping para que la imagen sea redonda y se fusione
+                if self.parent.logo_image:
+                    context = NSGraphicsContext.currentContext()
+                    context.saveGraphicsState()
+                    
+                    # Cortamos todo lo que se salga del círculo
+                    circle_path.addClip()
+                    
+                    # Dibujamos el logo ocupando el círculo (sin bordes negros que sobresalgan)
+                    # Usamos un margen interno casi nulo si queremos que la imagen mande, 
+                    # o un pequeño margen si queremos ver el fondo lila. 
+                    # Probemos con un margen mínimo para integración total.
+                    img_rect = circle_rect
+                    self.parent.logo_image.drawInRect_(img_rect)
+                    
+                    context.restoreGraphicsState()
+                
+                # Añadimos un pequeño borde de cristal al círculo para que brille
+                _hex_to_nscolor("ffffff", 0.3).setStroke()
+                circle_path.setLineWidth_(1.0)
+                circle_path.stroke()
+                
+                # 2. Draw Bars (shifted to the right)
                 context = NSGraphicsContext.currentContext()
                 context.saveGraphicsState()
                 
                 glow = NSShadow.alloc().init()
-                glow.setShadowColor_(_hex_to_nscolor("ac3aff", 1.0)) # Extreme purple neon glow
-                glow.setShadowBlurRadius_(10.0) # Huge blur for neon diffusion
-                glow.setShadowOffset_(NSSize(0, 0))
+                glow.setShadowColor_(_hex_to_nscolor(PURPLE_ACCENT, 0.8))
+                glow.setShadowBlurRadius_(10.0)
                 glow.set()
                 
-                # Draw bars
-                bar_width = 4
-                spacing = 4
-                total_width = (bar_width * 12) + (spacing * 11)
-                
-                start_x = (bounds.size.width - total_width) / 2
+                bar_width = 3
+                spacing = 3
+                num_bars = 12
+                start_x = circle_rect.origin.x + circle_rect.size.width + 12
                 center_y = bounds.size.height / 2
                 
-                # Lighter purple to pure white core gradient (Neon tube)
                 bar_grad = NSGradient.alloc().initWithStartingColor_endingColor_(
                     _hex_to_nscolor("922efa", 1.0),
                     _hex_to_nscolor("e6ccff", 1.0)
@@ -387,19 +414,18 @@ class OverlayView:
                         NSPoint(start_x + i * (bar_width + spacing), center_y - height / 2),
                         NSSize(bar_width, height)
                     )
-                    path = NSBezierPath.bezierPathWithRoundedRect_xRadius_yRadius_(rect, 2, 2)
-                    
+                    path = NSBezierPath.bezierPathWithRoundedRect_xRadius_yRadius_(rect, 1.5, 1.5)
                     bar_grad.drawInBezierPath_angle_(path, 90.0)
                 
                 context.restoreGraphicsState()
         
         self.VisualizerClass = RecordingVisualizerView
 
-        # Setup window
+        # Setup window - Wider to fit logo and bars
         screen_frame = NSScreen.mainScreen().frame()
-        width, height = 130, 44
+        width, height = 160, 44
         x = (screen_frame.size.width - width) / 2
-        y = 120 # Bottom padding
+        y = 120 
         
         frame = NSRect(NSPoint(x, y), NSSize(width, height))
         self.window = NSWindow.alloc().initWithContentRect_styleMask_backing_defer_(
@@ -765,15 +791,14 @@ class WhisperAIApp(rumps.App):
             if getattr(self.config, "ai_formatting", False) and text:
                 _log("Starting AI formatting")
                 sys_prompt = (
-                    "Eres un transcriptor y formateador de texto estricto. Tu ÚNICA función es limpiar la estructura "
-                    "visual y eliminar contenido basura (muletillas), respetando de forma absoluta las palabras del usuario.\n\n"
-                    "Reglas críticas (si las violas el sistema fallará):\n"
-                    "1. PRESERVA LA VOZ: Si el texto está en primera persona, mantenlo en primera persona. NO reescribas frases asumiendo el rol de un narrador en tercera persona. Mantenlo 100% como si lo estuviera dictando el usuario.\n"
-                    "2. NO AÑADAS CONTENIDO: Nunca inventes ni agregues información, resúmenes o conclusiones que el usuario no haya dicho literalmente.\n"
-                    "3. LIMPIEZA: Elimina únicamente 'eh', repeticiones, titubeos y muletillas de fluidez.\n"
-                    "4. ESTRUCTURA: Si enumera pasos o da instrucciones secuenciales ('primero', 'después', 'luego'), conviértelo en una lista con viñetas (- ) y saltos de línea para que sea visualmente limpio.\n"
-                    "5. Aplica puntuación ortográfica perfecta.\n"
-                    "6. FORMATO DE SALIDA: Jamás interactúes. Devuelve EXCLUSIVAMENTE el texto procesado sin saludos ni confirmaciones."
+                    "Eres un transcriptor y editor de estilo invisible. Tu ÚNICA función es darle formato y legibilidad al dictado "
+                    "del usuario usando correcta puntuación y saltos de línea (párrafos cortos), manteniendo ABSOLUTAMENTE la esencia y las palabras exactas usadas.\n\n"
+                    "Reglas CRÍTICAS (si las violas el sistema fallará):\n"
+                    "1. RESPETA LA PERSONA Y EL TONO: Si el texto es una orden, mantenlo como orden. Si está en primera persona, mantenlo en primera persona. NO alteres la forma en la que el usuario se expresa, NO uses palabras que no haya dicho.\n"
+                    "2. CERO INVENCIÓN: NO añadas palabras, ideas ni asumas el rol de asistente. Si el usuario da una orden, transcribe la orden, no la respondas.\n"
+                    "3. FORMATO LIMPIO: Usa saltos de línea para separar ideas y mejorar la legibilidad. Si ves enumeraciones claras, conviértelas en listas con viñetas discretamente.\n"
+                    "4. LIMPIEZA LIGERA: Solo elimina titubeos ('eh', 'mmm') y repeticiones accidentales de fluidez.\n"
+                    "5. ENRUTADO DIRECTO: Devuelve SOLO la transcripción formateada. Jamás interactúes, saludes ni confirmes."
                 )
                 try:
                     if provider == "groq":
