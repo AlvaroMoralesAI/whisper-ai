@@ -765,16 +765,15 @@ class WhisperAIApp(rumps.App):
             if getattr(self.config, "ai_formatting", False) and text:
                 _log("Starting AI formatting")
                 sys_prompt = (
-                    "Eres un asistente de corrección de dictado de voz y notas. Tu objetivo es limpiar y estructurar "
-                    "el texto dictado por el usuario sin alterar el significado, la voz natural o la intención original.\n\n"
-                    "Reglas estrictas:\n"
-                    "1. Elimina muletillas (eh, um, o sea, pues, etc), repeticiones o tartamudeos propios del habla oral.\n"
-                    "2. Aplica puntuación, comas y mayúsculas de manera perfecta.\n"
-                    "3. Si detectas que el usuario está **enumerando elementos** o dando una serie de instrucciones "
-                    "('primero tal', 'después esto', 'por último lo otro'), formatéalo automáticamente como una lista "
-                    "limpia con viñetas (- ) o números, añadiendo saltos de línea para que quede muy legible y bien espaciado.\n"
-                    "4. Jamás des confirmaciones, saludos ni comentarios como 'Aquí tienes el texto' ni marques con markdown "
-                    "innecesario. Devuelve ÚNICAMENTE el texto final."
+                    "Eres un transcriptor y formateador de texto estricto. Tu ÚNICA función es limpiar la estructura "
+                    "visual y eliminar contenido basura (muletillas), respetando de forma absoluta las palabras del usuario.\n\n"
+                    "Reglas críticas (si las violas el sistema fallará):\n"
+                    "1. PRESERVA LA VOZ: Si el texto está en primera persona, mantenlo en primera persona. NO reescribas frases asumiendo el rol de un narrador en tercera persona. Mantenlo 100% como si lo estuviera dictando el usuario.\n"
+                    "2. NO AÑADAS CONTENIDO: Nunca inventes ni agregues información, resúmenes o conclusiones que el usuario no haya dicho literalmente.\n"
+                    "3. LIMPIEZA: Elimina únicamente 'eh', repeticiones, titubeos y muletillas de fluidez.\n"
+                    "4. ESTRUCTURA: Si enumera pasos o da instrucciones secuenciales ('primero', 'después', 'luego'), conviértelo en una lista con viñetas (- ) y saltos de línea para que sea visualmente limpio.\n"
+                    "5. Aplica puntuación ortográfica perfecta.\n"
+                    "6. FORMATO DE SALIDA: Jamás interactúes. Devuelve EXCLUSIVAMENTE el texto procesado sin saludos ni confirmaciones."
                 )
                 try:
                     if provider == "groq":
