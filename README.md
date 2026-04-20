@@ -1,4 +1,4 @@
-# Whisper AI ✨
+# Whisper AI 🎤
 
 Una aplicación nativa de dictado por voz para macOS super premium con formateo automático generativo por Inteligencia Artificial (LLaMA).
 
